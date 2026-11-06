@@ -1,0 +1,17 @@
+.venv/
+.venv313/
+.uv-python/
+.uv-cache/
+__pycache__/
+*.pyc
+*.csv
+*.csv.gz
+*.parquet
+work/
+logs/
+*.sqlite3
+*.joblib
+*.keras
+*.npy
+*.html
+*.zip

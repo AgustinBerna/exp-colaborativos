@@ -1,0 +1,32 @@
+{
+  "Id_col": "numero_de_cliente",
+  "time_col": "foto_mes",
+  "target_col": "clase_ternaria",
+  "all_months": [201901, 201902, 201903, 201904, 201905, 201906, 201907, 201908, 201909, 201910, 201911, 201912],
+  "excluded_months": [201911, 201912],
+  "train_months": [201903, 201904, 201905, 201906],
+  "valid_month": 201908,
+  "test_month": 201910,
+  "methods": ["E0", "E1", "E2", "E3", "E4", "E5", "E6", "E7"],
+  "gain": {
+    "tp_value": 1072500.0,
+    "fp_value": -27500.0,
+    "smoothing_radius_n": 500
+  },
+  "optimization": {
+    "trials": 50,
+    "num_boost_round": 2000,
+    "early_stopping_rounds": 100,
+    "bagging_freq": 1,
+    "search_space": {
+      "num_leaves": [16, 256], 
+      "learning_rate": [0.01, 0.2],
+      "min_data_in_leaf": [20, 2000],
+      "feature_fraction": [0.2, 0.9],
+      "bagging_fraction": [0.5, 1.0]
+    }
+  },
+  "seeds": [100003, 100019, 100043, 100049, 100057, 100069, 100103, 100109, 100129, 100151,
+            100163, 100169, 100183, 100189, 100193, 100207, 100213, 100237, 100267, 100271,
+            100279, 100291, 100297, 100313, 100333, 100343, 100357, 100361, 100363, 100379]
+}
