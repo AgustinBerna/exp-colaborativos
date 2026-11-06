@@ -3,7 +3,7 @@
 Este directorio es el **único código** necesario para reproducir esta versión
 del experimento. No utiliza resultados ni checkpoints de `imputaciones_v2`.
 Las variables `tmobile_app` y `cmobile_app_trx` se excluyen **para todos los
-métodos** en `02_particionar.py`, antes de imputar y crear lags/deltas. El
+métodos** (ya que son 100% Na en todos los meses de entrenamiento) en `02_particionar.py`, antes de imputar y crear lags/deltas. El
 script comprueba que ambas tengan cero valores observados de enero a junio;
 si los datos cambian, falla en vez de excluir información disponible.
 
