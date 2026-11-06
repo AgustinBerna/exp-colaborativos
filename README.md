@@ -1,4 +1,4 @@
-# Imputación v3 · corrida completa desde el CSV crudo
+# Exp colaborativos - missings
 
 Este directorio es el **único código** necesario para reproducir esta versión
 del experimento. No utiliza resultados ni checkpoints de `imputaciones_v2`.
@@ -17,7 +17,11 @@ si los datos cambian, falla en vez de excluir información disponible.
 | E3 | Moda de train |
 | E4 | Forward fill por cliente, sólo desde meses anteriores |
 | E5 | `IterativeImputer` + BayesianRidge; fit en 60.000 filas, máximo 10 rondas, 25 variables vecinas (configuración que completó v2) |
-| E06 | `miceforest` + LightGBM; todo train, `data_subset=0`, 5 rondas MICE, 100 iteraciones LightGBM por variable/ronda, 5 donantes PMM |
+| E6 | `miceforest` + LightGBM; todo train, `data_subset=0`, 5 rondas MICE, 100 iteraciones LightGBM por variable/ronda, 5 donantes PMM |
+
+En los archivos de código y resultados, E6 conserva el identificador interno
+`E06`. No hay un método adicional: E1–E6 son las seis imputaciones comparadas
+con el baseline E0.
 
 La auditoría transforma un **mes-variable** 100% cero en faltante y guarda el
 detalle en `raw/variables_100pct_ceros.csv`. No agrega indicadores de missing.
@@ -39,9 +43,9 @@ que no podían aportar lags al entrenamiento.
 los scripts `03_imputar_*.py`, `04_modelar_evaluar.py` y `dashboard.R`.
 `05_estado.py` muestra checkpoints. `src/` contiene las funciones compartidas
 de features y publicación en Cloud Storage. Cada etapa deja logs y marcadores
-`DONE.json`; E06 guarda un checkpoint por ronda MICE y por mes. E5 guarda el
+`DONE.json`; E6 (`E06` en el código) guarda un checkpoint por ronda MICE y por mes. E5 guarda el
 imputador al terminar el fit, por lo que una interrupción durante ese fit lo
-repite. Los métodos se preparan en el orden E0–E5, E06.
+repite. Los métodos se preparan en el orden E0–E6.
 E5 usa su algoritmo anterior sin acotar predicciones al rango observado.
 
 ## Instalar y probar
