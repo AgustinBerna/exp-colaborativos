@@ -1,4 +1,5 @@
-# Imputación v3 · corrida completa desde el CSV crudo
+# Imputación experimento - missing
+
 
 Este directorio es el **único código** necesario para reproducir esta versión
 del experimento. No utiliza resultados ni checkpoints de `imputaciones_v2`.
