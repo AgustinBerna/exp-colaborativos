@@ -87,5 +87,4 @@ de métricas por semilla, ensambles, curvas y `FINALIZADO.json`.
 
 Los resultados de corridas reales se guardan fuera de este directorio de código,
 en la ruta indicada con `--work` y, si corresponde, en `--remote`. No se incluyen
-datos, modelos, logs ni checkpoints en el repositorio. No mezclar resultados de
-esta versión con v2 ni con `imputacion_v3_indicadores`.
+datos, modelos, logs ni checkpoints en el repositorio.
