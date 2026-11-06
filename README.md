@@ -99,5 +99,16 @@ de métricas por semilla, ensambles, curvas y `FINALIZADO.json`.
 
 Los resultados de corridas reales se guardan fuera de este directorio de código,
 en la ruta indicada con `--work` y, si corresponde, en `--remote`. No se incluyen
-datos, modelos, logs ni checkpoints en el repositorio. No mezclar resultados de
+datos, modelos, logs ni checkpoints en el repositorio; sólo se publica el
+dashboard resumido. No mezclar resultados de
 esta versión con v2 ni con `imputacion_v3_indicadores`.
+
+## Dashboard de la corrida v3
+
+El [dashboard de resultados](docs/dashboard_imputacion_v3.html) contiene el HTML,
+JavaScript y CSS en un solo archivo. Se puede descargar y abrir sin `lib/` ni
+conexión a internet. Proviene de `dashboard_comparativo_descargar (1).zip`
+(SHA-256: `14f6e3c696eb10d7bbf891b00aa44bfc41b2f7c767a162e6e2c20388a0cbaaae`).
+El paquete del dashboard no incluye `run_identity.json`; para verificar por hash
+la identidad exacta del código ejecutado en GCP hace falta ese manifiesto de
+la corrida.
