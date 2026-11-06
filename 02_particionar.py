@@ -70,6 +70,27 @@ def main():
     parquet_files = [work / "raw" / f"{m}.parquet" for m in sorted(config["all_months"])]
     df = pl.concat([pl.read_parquet(f) for f in parquet_files], how="vertical_relaxed")
 
+    # Estas variables no tienen valores observados ni en train ni en los meses
+    # enero/febrero que alimentan sus lags. Se excluyen para TODOS los métodos
+    # antes de imputar y generar variables temporales.
+    drop_features = config["drop_features_without_history"]
+    history_months = sorted(set(config["train_months"] + [201901, 201902]))
+    history = df.filter(pl.col(time_col).is_in(history_months))
+    exclusions = []
+    for col in drop_features:
+        if col not in df.columns:
+            raise ValueError(f"La columna a excluir no existe: {col}")
+        observed = history[col].is_not_null().sum()
+        if observed != 0:
+            raise ValueError(f"{col} tiene {observed} valores en enero-junio; revisar exclusión")
+        exclusions.append({"feature": col, "history_months": history_months,
+                           "observed_in_history": int(observed),
+                           "reason": "sin información en train ni en lags de enero/febrero"})
+    df = df.drop(drop_features)
+    (part_dir / "features_excluidas.json").write_text(
+        json.dumps(exclusions, indent=2), encoding="utf-8")
+    logging.info("Variables excluidas antes de imputar y crear lags: %s", drop_features)
+
     # Orden estricto por cliente y mes para garantizar lags/deltas exactos en la etapa 3
     df = df.sort([id_col, time_col])
 

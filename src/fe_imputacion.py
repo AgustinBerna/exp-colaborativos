@@ -11,11 +11,7 @@ def get_feature_cols(df: pl.DataFrame, config: dict) -> list[str]:
         config["Id_col"], config["time_col"], config["target_col"],
         "target_binario", "target_baja2", "partition_role"
     }
-    # Los indicadores ya están calculados desde el valor original del mes.
-    # Deben llegar intactos al modelo, sin pasar por un imputador ni generar
-    # lags/deltas propios.
-    suffix = config["missing_indicator_suffix"]
-    return [c for c in df.columns if c not in exclude and not c.endswith(suffix)]
+    return [c for c in df.columns if c not in exclude]
 
 
 def build_lags_deltas_and_save(df_imputed: pl.DataFrame, feature_cols: list[str], work: Path, config: dict, method: str):

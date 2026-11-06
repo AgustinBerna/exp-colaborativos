@@ -7,7 +7,11 @@
   "train_months": [201903, 201904, 201905, 201906],
   "valid_month": 201908,
   "test_month": 201910,
-  "methods": ["E0", "E1", "E2", "E3", "E4", "E5", "E6", "E7"],
+  "drop_features_without_history": ["tmobile_app", "cmobile_app_trx"],
+  "methods": ["E0", "E1", "E2", "E3", "E4", "E5", "E06"],
+  "ridge": {"fit_sample_size": 60000, "max_iter": 10, "n_nearest_features": 25},
+  "miceforest": {"fit_sample_size": 0, "iterations": 5, "lgbm_num_iterations": 100,
+                  "data_subset": 0, "mean_match_candidates": 5},
   "gain": {
     "tp_value": 1072500.0,
     "fp_value": -27500.0,

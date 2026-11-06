@@ -1,10 +1,5 @@
 #!/usr/bin/env Rscript
-# ==============================================================================
-# dashboard.R
-# Genera un Dashboard HTML interactivo comparando E0 (Baseline) vs E1..E7
-# Métricas clave: Ganancia, ROC-AUC, Average PR (PR-AUC), Lift y estabilidad
-# ==============================================================================
-
+# Dashboard v3: N se elige con E0 en agosto; octubre sólo compara métodos.
 suppressPackageStartupMessages({
   library(tidyverse)
   library(plotly)
@@ -14,188 +9,158 @@ suppressPackageStartupMessages({
 })
 
 args <- commandArgs(trailingOnly = TRUE)
-work_dir <- ifelse(length(args) >= 1, args[1], "./work")
-res_dir  <- file.path(work_dir, "resultados")
-raw_dir  <- file.path(work_dir, "raw")
+if (length(args) != 1) stop("Uso: Rscript dashboard.R <work>")
+work <- normalizePath(args[1], mustWork = TRUE)
+res <- file.path(work, "resultados")
+seed <- read_csv(file.path(res, "metricas_por_semilla_test.csv"), show_col_types = FALSE)
+ens <- read_csv(file.path(res, "resumen_ensamble_test.csv"), show_col_types = FALSE)
+curves <- read_csv(file.path(res, "curvas_ensamble_test.csv"), show_col_types = FALSE)
+valid <- read_csv(file.path(work, "E0", "optimization", "curva_ganancia_valid_e0.csv"), show_col_types = FALSE)
+nan_report <- read_csv(file.path(work, "raw", "reporte_nan_por_mes.csv"), show_col_types = FALSE)
+selected <- jsonlite::fromJSON(file.path(work, "E0", "optimization", "seleccion.json"))
+n_fijo <- unique(ens$n_fijo_evaluado)
+stopifnot(length(n_fijo) == 1, n_fijo == selected$n_selected_valid,
+          identical(sort(unique(seed$method)), sort(c("E0", "E1", "E2", "E3", "E4", "E5", "E06"))))
 
-# 1. Carga de salidas de los experimentos
-seed_metrics <- read_csv(file.path(res_dir, "metricas_por_semilla_test.csv"), show_col_types = FALSE)
-ens_metrics  <- read_csv(file.path(res_dir, "resumen_ensamble_test.csv"), show_col_types = FALSE)
-ens_curves   <- read_csv(file.path(res_dir, "curvas_ensamble_test.csv"), show_col_types = FALSE)
-nan_report   <- read_csv(file.path(raw_dir, "reporte_nan_por_mes.csv"), show_col_types = FALSE)
+labels <- c(E0 = "E0 · NaN nativo", E1 = "E1 · Media", E2 = "E2 · Mediana",
+            E3 = "E3 · Moda", E4 = "E4 · Forward fill",
+            E5 = "E5 · Ridge 60k/10/25", E06 = "E06 · miceforest")
+decorate <- function(df) {
+  df %>% mutate(Experimento = factor(unname(labels[method]), levels = unname(labels)))
+}
+seed <- decorate(seed)
+ens <- decorate(ens)
+curves <- decorate(curves)
 
-# Etiquetas descriptivas de los experimentos
-method_labels <- c(
-  "E0" = "E0: Baseline (NaN nativo)",
-  "E1" = "E1: Media (Train)",
-  "E2" = "E2: Mediana (Train)",
-  "E3" = "E3: Moda (Train)",
-  "E4" = "E4: Temporal (Forward Fill)",
-  "E5" = "E5: Ridge (120k, 15 iter., 50 vecinas)",
-  "E06" = "E06: miceforest (MICE/LightGBM)",
-  "E6" = "E6: Autoencoder",
-  "E7" = "E7: miceforest (MICE/LightGBM)"
+# Los p-valores vienen del Wilcoxon pareado por semilla, con ajuste Holm.
+stats <- seed %>% group_by(method, Experimento) %>%
+  summarise(auc_media = mean(roc_auc), auc_sd = sd(roc_auc),
+            ap_media = mean(pr_auc), ganancia_media = mean(gain_at_n_fijo),
+            ganancia_sd = sd(gain_at_n_fijo), lift_medio = mean(lift_at_n_fijo),
+            recall_medio = mean(recall_baja2_at_n_fijo), .groups = "drop") %>%
+  left_join(ens %>% select(method, auc_ensamble = roc_auc,
+                           ganancia_ensamble = gain_at_n_fijo,
+                           p_holm_auc_vs_E0, p_holm_gain_vs_E0), by = "method")
+base_auc <- stats$auc_media[stats$method == "E0"]
+base_gain <- stats$ganancia_media[stats$method == "E0"]
+stars <- function(p) case_when(is.na(p) ~ "?", p < .001 ~ "***", p < .01 ~ "**",
+                               p < .05 ~ "*", TRUE ~ "ns")
+stats <- stats %>% mutate(
+  auc_marca = if_else(method == "E0", "referencia",
+                      paste0(stars(p_holm_auc_vs_E0), if_else(auc_media > base_auc, " ↑", " ↓"))),
+  ganancia_marca = if_else(method == "E0", "referencia",
+                           paste0(stars(p_holm_gain_vs_E0),
+                                  if_else(ganancia_media > base_gain, " ↑", " ↓")))
 )
-
-seed_metrics <- seed_metrics %>%
-  mutate(Experimento = recode(method, !!!method_labels, .default = method))
-ens_metrics <- ens_metrics %>%
-  mutate(Experimento = recode(method, !!!method_labels, .default = method))
-ens_curves <- ens_curves %>%
-  mutate(Experimento = recode(method, !!!method_labels, .default = method))
-
-# 2. Tabla Resumen Ejecutiva (Ensamble + Media/SD de Semillas + Wilcoxon)
-summary_table <- seed_metrics %>%
-  group_by(method, Experimento) %>%
-  summarise(
-    ROC_AUC_Media = mean(roc_auc),
-    ROC_AUC_SD    = sd(roc_auc),
-    PR_AUC_Media  = mean(pr_auc),
-    Lift_Media    = mean(lift_at_n_fijo),
-    Ganancia_Media = mean(gain_at_n_fijo),
-    Ganancia_SD    = sd(gain_at_n_fijo),
-    .groups = "drop"
-  ) %>%
-  left_join(
-    ens_metrics %>% select(method, Ensamble_ROC_AUC = roc_auc, Ensamble_PR_AUC = pr_auc,
-                           Ensamble_Ganancia_N_Fijo = gain_at_n_fijo, N_Fijo_Validacion = n_fijo_evaluado,
-                           any_of(c("p_val_auc_vs_E0", "p_holm_auc_vs_E0", "p_val_gain_vs_E0", "p_holm_gain_vs_E0"))),
-    by = "method"
-  ) %>%
-  arrange(desc(Ensamble_Ganancia_N_Fijo))
-
-dt_widget <- datatable(
-  summary_table,
-  rownames = FALSE,
-  options = list(pageLength = 10, dom = "t", scrollX = TRUE),
-  caption = "Comparación en Test (201910): Métricas por Semillero y Ensamble de Semillas"
+tabla <- datatable(
+  stats %>% select(Experimento, auc_media, auc_sd, ap_media, ganancia_media,
+                   ganancia_sd, lift_medio, recall_medio, auc_ensamble,
+                   ganancia_ensamble, p_holm_auc_vs_E0, p_holm_gain_vs_E0,
+                   auc_marca, ganancia_marca),
+  rownames = FALSE, options = list(pageLength = 5, dom = "t", scrollX = TRUE),
+  caption = "Octubre 2019 · 30 semillas · mismo N fijado en agosto"
 ) %>%
-  formatRound(columns = c("ROC_AUC_Media", "ROC_AUC_SD", "PR_AUC_Media", "Ensamble_ROC_AUC", "Ensamble_PR_AUC"), digits = 5) %>%
-  formatRound(columns = c("Lift_Media"), digits = 2) %>%
-  formatCurrency(columns = c("Ganancia_Media", "Ganancia_SD", "Ensamble_Ganancia_N_Fijo"), currency = "$", digits = 0)
+  formatRound(columns = c("auc_media", "auc_sd", "ap_media", "auc_ensamble"), digits = 5) %>%
+  formatRound(columns = c("lift_medio", "recall_medio", "p_holm_auc_vs_E0",
+                            "p_holm_gain_vs_E0"), digits = 4) %>%
+  formatCurrency(columns = c("ganancia_media", "ganancia_sd", "ganancia_ensamble"),
+                 currency = "$", digits = 0)
 
-# 3. Curvas de ganancia hasta el N elegido con E0 en agosto.
-n_fijo <- unique(ens_metrics$n_fijo_evaluado)
-stopifnot(length(n_fijo) == 1)
-ens_curves <- ens_curves %>%
-  filter(envios <= n_fijo) %>%
-  group_by(method) %>%
+# CSV de agosto conserva TODOS los N; se submuestrea sólo la visualización.
+limit_valid <- min(max(15000L, n_fijo + 500L), max(valid$envios))
+valid_plot <- valid %>% filter(envios <= limit_valid,
+                                envios %% 25L == 0L | envios == n_fijo |
+                                  envios == selected$n_raw_max_valid)
+g_valid <- ggplot(valid_plot, aes(x = envios)) +
+  geom_line(aes(y = ganancia / 1e6, color = "Ganancia acumulada"),
+            linewidth = .6, alpha = .6) +
+  geom_line(aes(y = ganancia_suavizada / 1e6, color = "Meseta suavizada"),
+            linewidth = 1.3) +
+  geom_vline(xintercept = n_fijo, linetype = "dashed", color = "#13834b") +
+  annotate("text", x = n_fijo, y = max(valid_plot$ganancia / 1e6),
+           label = paste("N elegido:", n_fijo), hjust = 0, vjust = -0.6,
+           color = "#13834b", size = 3.5) +
+  scale_color_manual(values = c("Ganancia acumulada" = "#8998ac",
+                                "Meseta suavizada" = "#1768a8"), name = NULL) +
+  labs(title = "E0 · Ganancia en validación (agosto 2019)",
+       subtitle = paste0("N = ", n_fijo, " por máximo de la media móvil ±",
+                         selected$smoothing_radius_n, "; curva hasta ", limit_valid, " envíos"),
+       x = "Cantidad de envíos", y = "Ganancia acumulada (millones de $)") + theme_minimal()
+
+# Octubre se grafica únicamente hasta el N decidido sin ver test.
+curves <- curves %>% filter(envios <= n_fijo) %>% group_by(method) %>%
   arrange(envios, .by_group = TRUE) %>%
   mutate(ganancia_suave = vapply(seq_along(ganancia), function(i) {
            mean(ganancia[max(1, i - 2):min(length(ganancia), i + 2)])
-         }, numeric(1))) %>%
-  ungroup()
-g_ganancia <- ggplot(ens_curves, aes(x = envios, color = Experimento)) +
-  geom_line(aes(y = ganancia / 1e6), linewidth = 0.45, alpha = 0.25) +
-  geom_line(aes(y = ganancia_suave / 1e6), linewidth = 1) +
-  geom_vline(xintercept = n_fijo, linetype = "dashed", color = "gray40") +
-  labs(
-    title = "Ganancia en Test hasta N fijado en Validación (línea gruesa suavizada)",
-    x = "Cantidad de Envíos Estímulo (N)",
-    y = "Ganancia Acumulada (Millones de $)"
-  ) +
-  theme_minimal()
-p_ganancia <- ggplotly(g_ganancia)
-
-# 4. Gráfico 2: Curva de Lift Acumulado por Cantidad de Envíos
-g_lift <- ggplot(ens_curves, aes(x = envios, y = lift, color = Experimento)) +
+         }, numeric(1))) %>% ungroup()
+g_gain <- ggplot(curves, aes(envios, ganancia_suave / 1e6, color = Experimento)) +
+  geom_line(linewidth = 1) + geom_vline(xintercept = n_fijo, linetype = "dashed") +
+  labs(title = "Ganancia en octubre hasta N", x = "Envíos", y = "Millones de $") + theme_minimal()
+g_lift <- ggplot(curves, aes(envios, lift, color = Experimento)) +
   geom_line(linewidth = 1) +
-  geom_hline(yintercept = 1, linetype = "dashed", color = "gray40") +
-  labs(
-    title = "Curva de Lift Acumulado en Test (201910)",
-    x = "Cantidad de Envíos (N)",
-    y = "Lift sobre Tasa Base"
-  ) +
-  theme_minimal()
-p_lift <- ggplotly(g_lift)
-
-# 5. Puntos de precisión/recall BAJA+2 hasta N (no es la AP binaria completa).
-g_pr <- ggplot(ens_curves, aes(x = recall, y = precision, color = Experimento)) +
+  labs(title = "Lift BAJA+2 en octubre", x = "Envíos", y = "Lift") + theme_minimal()
+g_pr <- ggplot(curves, aes(recall, precision, color = Experimento)) +
   geom_line(linewidth = 1) +
-  labs(
-    title = "Precisión y recall BAJA+2 hasta N en Test (puntos de la curva)",
-    x = "Recall (Sensibilidad)",
-    y = "Precision (Valor Predictivo Positivo)"
-  ) +
+  labs(title = "Precisión y recall BAJA+2 hasta N", x = "Recall", y = "Precisión") + theme_minimal()
+
+# Las marcas muestran significancia Y dirección frente a E0.
+auc_y <- max(seed$roc_auc) + max(.0005, diff(range(seed$roc_auc)) * .12)
+gain_y <- max(seed$gain_at_n_fijo / 1e6) +
+  max(1, diff(range(seed$gain_at_n_fijo / 1e6)) * .12)
+g_box_auc <- ggplot(seed, aes(Experimento, roc_auc, fill = Experimento)) +
+  geom_boxplot(alpha = .65, outlier.shape = NA) +
+  geom_jitter(width = .12, size = 1.3, alpha = .65) +
+  geom_text(data = stats, aes(x = Experimento, y = auc_y, label = auc_marca),
+            inherit.aes = FALSE, size = 3.3) +
+  scale_y_continuous(expand = expansion(mult = c(.05, .18))) + coord_flip(clip = "off") +
+  labs(title = "AUC por semilla · Wilcoxon vs E0", x = NULL, y = "AUC binaria") +
+  theme_minimal() + theme(legend.position = "none")
+g_box_gain <- ggplot(seed, aes(Experimento, gain_at_n_fijo / 1e6, fill = Experimento)) +
+  geom_boxplot(alpha = .65, outlier.shape = NA) +
+  geom_jitter(width = .12, size = 1.3, alpha = .65) +
+  geom_text(data = stats, aes(x = Experimento, y = gain_y, label = ganancia_marca),
+            inherit.aes = FALSE, size = 3.3) +
+  scale_y_continuous(expand = expansion(mult = c(.05, .18))) + coord_flip(clip = "off") +
+  labs(title = "Ganancia por semilla · Wilcoxon vs E0", x = NULL,
+       y = "Ganancia al N fijo (millones de $)") +
+  theme_minimal() + theme(legend.position = "none")
+
+nan_summary <- nan_report %>% group_by(foto_mes) %>%
+  summarise(pct_nan_medio = mean(pct_nan),
+            variables_100pct_cero = sum(convertida_de_100pct_cero), .groups = "drop")
+g_nan <- ggplot(nan_summary, aes(factor(foto_mes), variables_100pct_cero,
+                                 fill = pct_nan_medio)) + geom_col() +
+  labs(title = "Variables 100% cero por mes", x = "Mes", y = "Variables convertidas a NaN") +
   theme_minimal()
-p_pr <- ggplotly(g_pr)
 
-# 6. Gráfico 4: Distribución de Ganancia y ROC-AUC por Semilla (Semillero)
-g_box_gain <- ggplot(seed_metrics, aes(x = reorder(Experimento, gain_at_n_fijo, FUN = median), y = gain_at_n_fijo / 1e6, fill = Experimento)) +
-  geom_boxplot(alpha = 0.7) +
-  geom_jitter(width = 0.15, alpha = 0.8, size = 2) +
-  coord_flip() +
-  labs(
-    title = "Estabilidad por Semilla: Ganancia al N fijo en Test (201910)",
-    x = "",
-    y = "Ganancia al N fijo (Millones de $)"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "none")
-p_box_gain <- ggplotly(g_box_gain)
-
-g_box_auc <- ggplot(seed_metrics, aes(x = reorder(Experimento, roc_auc, FUN = median), y = roc_auc, fill = Experimento)) +
-  geom_boxplot(alpha = 0.7) +
-  geom_jitter(width = 0.15, alpha = 0.8, size = 2) +
-  coord_flip() +
-  labs(
-    title = "Estabilidad por Semilla: ROC-AUC en Test (201910)",
-    x = "",
-    y = "ROC-AUC (201910)"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "none")
-p_box_auc <- ggplotly(g_box_auc)
-
-# 7. Gráfico 5: Auditoría de % NaN y Variables con 100% Ceros por Mes (Etapa 01)
-nan_mes_resumen <- nan_report %>%
-  group_by(foto_mes) %>%
-  summarise(
-    Pct_NaN_Promedio = mean(pct_nan),
-    Vars_Con_Faltantes = sum(n_nan > 0),
-    Vars_Rotas_100pct_Cero = sum(convertida_de_100pct_cero),
-    .groups = "drop"
-  ) %>%
-  mutate(foto_mes = as.factor(foto_mes))
-
-g_nan <- ggplot(nan_mes_resumen, aes(x = foto_mes, y = Vars_Rotas_100pct_Cero, fill = Pct_NaN_Promedio)) +
-  geom_col() +
-  labs(
-    title = "Auditoría Etapa 01: Variables con 100% Ceros Convertidas a NaN por Mes",
-    x = "Mes (foto_mes)",
-    y = "Cant. Variables 100% Cero -> NaN"
-  ) +
-  theme_minimal()
-p_nan <- ggplotly(g_nan)
-
-# 8. Ensamblado del Dashboard en un único archivo HTML autónomo
-dashboard_ui <- tagList(
-  tags$head(
-    tags$title("Dashboard Comparativo de Imputación - 2019"),
-    tags$style(HTML("
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 24px; background: #f8f9fa; color: #212529; }
-      .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
-      .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-      h1, h2 { color: #1a365d; margin-top: 0; }
-    "))
-  ),
-  tags$h1("Dashboard Experimental: Estrategias de Imputación (2019)"),
-  tags$p("Entrenamiento: 201903-201906 (BAJA+1 + BAJA+2) | Validación BO: 201908 (AUC) | Evaluación Test: 201910 (Ganancia, ROC-AUC, PR-AUC, Lift)"),
-  div(class = "card", tags$h2("1. Resumen Ejecutivo de Métricas y Test de Wilcoxon vs E0"), dt_widget),
-  div(class = "grid-2",
-    div(class = "card", p_ganancia),
-    div(class = "card", p_lift)
-  ),
-  div(class = "grid-2",
-    div(class = "card", p_box_gain),
-    div(class = "card", p_box_auc)
-  ),
-  div(class = "grid-2",
-    div(class = "card", p_pr),
-    div(class = "card", p_nan)
-  )
+card <- function(title, ...) div(class = "card", tags$h2(title), ...)
+dashboard <- tagList(
+  tags$head(tags$title("Imputaciones v3 · resultados 2019"),
+            tags$style(HTML("body{font-family:Arial,sans-serif;margin:24px;background:#f5f7fa;color:#172b4d}.card{background:white;padding:20px;border-radius:10px;margin:20px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:20px}.grid .card{margin:0}h1,h2{color:#12345c}"))),
+  tags$h1("Experimento de imputaciones · v3"),
+  tags$p("Train: marzo-junio 2019 · Validación: agosto · Test: octubre · 30 semillas"),
+  card("1. Cómo se eligió N en validación", ggplotly(g_valid),
+       tags$p("Optuna ordenó modelos por AUC binaria. Con el mejor E0 se calculó la ganancia para todos los N de agosto y se eligió la meseta suavizada. Octubre no participó.")),
+  card("2. Comparación en octubre al N fijo", tabla,
+       tags$p("* p<0,05 · ** p<0,01 · *** p<0,001 · ns: no significativo. Wilcoxon pareado por semilla, con ajuste Holm dentro de cada métrica. ↑/↓ indica dirección del promedio frente a E0.")),
+  div(class = "grid", card("AUC por semilla", ggplotly(g_box_auc)),
+      card("Ganancia por semilla", ggplotly(g_box_gain))),
+  div(class = "grid", card("Curva de ganancia en test", ggplotly(g_gain)),
+      card("Lift en test", ggplotly(g_lift))),
+  div(class = "grid", card("Precisión y recall", ggplotly(g_pr)),
+      card("Auditoría de faltantes", ggplotly(g_nan))),
+  tags$p("Las semillas comparten el mismo test: el Wilcoxon mide estabilidad frente a la aleatoriedad del modelo, no generalización temporal independiente.")
 )
 
-out_html <- file.path(res_dir, "dashboard_comparativo.html")
-save_html(dashboard_ui, file = out_html)
-cat(sprintf("Dashboard generado con éxito en: %s\n", out_html))
+out <- file.path(res, "dashboard_comparativo.html")
+save_html(dashboard, file = out, libdir = "lib")
+cat("Dashboard generado:", out, "\n")
+# HTML + lib en un ZIP para descargar desde JupyterLab sin perder gráficos.
+if (nzchar(Sys.which("zip"))) {
+  previous <- getwd()
+  setwd(res)
+  utils::zip("dashboard_comparativo_descargar.zip",
+             files = c("dashboard_comparativo.html", "lib"), flags = "-r9X")
+  setwd(previous)
+  cat("ZIP descargable:", file.path(res, "dashboard_comparativo_descargar.zip"), "\n")
+}

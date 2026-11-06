@@ -17,6 +17,7 @@ def main():
     args = parser.parse_args()
 
     work = args.work.resolve()
+    (work / "logs").mkdir(parents=True, exist_ok=True)
     logging.basicConfig(level=logging.INFO, filename=work / "logs" / "03_imputar_E0.log", format="%(asctime)s %(message)s")
     config = json.loads(args.config.read_text(encoding="utf-8"))
 

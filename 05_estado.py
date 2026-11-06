@@ -3,7 +3,7 @@
 Muestra en consola y guarda en logs/05_estado.log el estado de:
   - 01_auditar (raw/DONE.json)
   - 02_particionar (partition/DONE.json)
-  - Cada experimento (E0..E7): preparación, selección heredada de E0 y semillas de test.
+  - Cada experimento (E0-E5 y E06): preparación, selección heredada de E0 y semillas de test.
 """
 import argparse, json, logging
 from pathlib import Path

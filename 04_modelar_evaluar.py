@@ -27,8 +27,8 @@ from src.remote import snapshot_sqlite, upload, upload_files_then_marker
 META_COLS = {"numero_de_cliente", "foto_mes", "clase_ternaria", "target_binario", "target_baja2", "partition_role"}
 
 
-def select_n_from_plateau(cumulative_gain: np.ndarray, radius: int) -> tuple[int, float]:
-    """Maximiza la ganancia media en [N-radius, N+radius], con menor N en empates."""
+def smooth_gain_curve(cumulative_gain: np.ndarray, radius: int) -> np.ndarray:
+    """Promedia la ganancia acumulada en N±radio para todos los N observables."""
     if radius < 0 or len(cumulative_gain) == 0:
         raise ValueError("Curva vacía o radio de suavizado negativo")
     positions = np.arange(len(cumulative_gain))
@@ -36,6 +36,12 @@ def select_n_from_plateau(cumulative_gain: np.ndarray, radius: int) -> tuple[int
     right = np.minimum(len(cumulative_gain) - 1, positions + radius)
     prefix = np.r_[0.0, np.cumsum(cumulative_gain, dtype=np.float64)]
     smooth = (prefix[right + 1] - prefix[left]) / (right - left + 1)
+    return smooth
+
+
+def select_n_from_plateau(cumulative_gain: np.ndarray, radius: int) -> tuple[int, float]:
+    """Maximiza la curva suavizada; en empate np.argmax elige el menor N."""
+    smooth = smooth_gain_curve(cumulative_gain, radius)
     selected = int(np.argmax(smooth))
     # No elegir una campaña con ganancia real negativa aunque su entorno
     # suavizado contenga mejores puntos cercanos.
@@ -124,10 +130,13 @@ def optimize_lgbm(X_tr, y_tr, X_va, y_va, yb2_va, ids_va, opt_dir: Path, config:
     opt_dir.mkdir(parents=True, exist_ok=True)
     opt_done = opt_dir / "DONE.json"
     sel_file = opt_dir / "seleccion.json"
+    curve_file = opt_dir / "curva_ganancia_valid_e0.csv"
 
-    if opt_done.exists() and sel_file.exists():
+    if opt_done.exists() and sel_file.exists() and curve_file.exists():
         logging.info("[%s] Optimización ya completada en %s", method, sel_file)
         return json.loads(sel_file.read_text(encoding="utf-8"))
+    if opt_done.exists():
+        raise RuntimeError("Checkpoint E0 incompleto: falta selección o curva de validación")
 
     opt_cfg = config["optimization"]
     sp = opt_cfg["search_space"]
@@ -198,6 +207,11 @@ def optimize_lgbm(X_tr, y_tr, X_va, y_va, yb2_va, ids_va, opt_dir: Path, config:
     # entre N-500 y N+500 envíos (radio configurable). Empates: menor N.
     radius = int(config["gain"]["smoothing_radius_n"])
     n_selected_valid, smooth_gain = select_n_from_plateau(cum_gain_va, radius)
+    # Guardar los 131k+ puntos de agosto, no sólo el N ganador. El dashboard
+    # puede mostrar la meseta y la caída posterior sin consultar octubre.
+    smooth_all = smooth_gain_curve(cum_gain_va, radius)
+    pl.DataFrame({"envios": np.arange(len(cum_gain_va), dtype=np.int32),
+                  "ganancia": cum_gain_va, "ganancia_suavizada": smooth_all}).write_csv(curve_file)
 
     best_info = {
         "source_method": method,
@@ -212,7 +226,7 @@ def optimize_lgbm(X_tr, y_tr, X_va, y_va, yb2_va, ids_va, opt_dir: Path, config:
     }
     sel_file.write_text(json.dumps(best_info, indent=2), encoding="utf-8")
     opt_done.write_text(json.dumps({"status": "done"}), encoding="utf-8")
-    upload_files_then_marker([sel_file], opt_done)
+    upload_files_then_marker([sel_file, curve_file], opt_done)
 
     del dtrain, dvalid
     gc.collect()
