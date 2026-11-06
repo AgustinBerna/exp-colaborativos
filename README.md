@@ -16,8 +16,8 @@ si los datos cambian, falla en vez de excluir información disponible.
 | E2 | Mediana de train |
 | E3 | Moda de train |
 | E4 | Forward fill por cliente, sólo desde meses anteriores |
-| E5 | `IterativeImputer` + BayesianRidge; fit en 60.000 filas, máximo 10 rondas, 25 variables vecinas (configuración que completó v2) |
-| E06 | `miceforest` + LightGBM; todo train, `data_subset=0`, 5 rondas MICE, 100 iteraciones LightGBM por variable/ronda, 5 donantes PMM |
+| E5 | `IterativeImputer` + BayesianRidge; fit en 60.000 filas, máximo 10 rondas, 25 variables vecinas|
+| E6 | `miceforest` + LightGBM; todo train, `data_subset=0`, 5 rondas MICE, 100 iteraciones LightGBM por variable/ronda, 5 donantes PMM |
 
 La auditoría transforma un **mes-variable** 100% cero en faltante y guarda el
 detalle en `raw/variables_100pct_ceros.csv`. No agrega indicadores de missing.
