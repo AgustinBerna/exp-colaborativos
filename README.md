@@ -1,7 +1,7 @@
 # Exp colaborativos - missings
 
 Este directorio es el **único código** necesario para reproducir esta versión
-del experimento. No utiliza resultados ni checkpoints de `imputaciones_v2`.
+del experimento. 
 Las variables `tmobile_app` y `cmobile_app_trx` se excluyen **para todos los
 métodos** en `02_particionar.py`, antes de imputar y crear lags/deltas. El
 script comprueba que ambas tengan cero valores observados de enero a junio;
@@ -16,7 +16,7 @@ si los datos cambian, falla en vez de excluir información disponible.
 | E2 | Mediana de train |
 | E3 | Moda de train |
 | E4 | Forward fill por cliente, sólo desde meses anteriores |
-| E5 | `IterativeImputer` + BayesianRidge; fit en 60.000 filas, máximo 10 rondas, 25 variables vecinas (configuración que completó v2) |
+| E5 | `IterativeImputer` + BayesianRidge; fit en 60.000 filas, máximo 10 rondas, 25 variables vecinas |
 | E6 | `miceforest` + LightGBM; todo train, `data_subset=0`, 5 rondas MICE, 100 iteraciones LightGBM por variable/ronda, 5 donantes PMM |
 
 En los archivos de código y resultados, E6 conserva el identificador interno
@@ -30,8 +30,7 @@ que no podían aportar lags al entrenamiento.
 
 - Entrenamiento sin undersampling: 201903–201906; BAJA+1 y BAJA+2 son positivas.
 - Optuna: 50 trials **sólo en E0**, ordenados por AUC binaria de 201908.
-- E0 elige un N único por ganancia acumulada suavizada en agosto, con radio
-  ±500 envíos. La curva completa de agosto queda guardada.
+- E0 elige un N único por ganancia acumulada suavizada en agosto, con ±500 envíos. La curva completa de agosto queda guardada.
 - Test: 201910, con 30 semillas comunes. Todos usan parámetros, iteración y N
   elegidos por E0; la ganancia remunera sólo BAJA+2.
 - Wilcoxon pareado por semilla frente a E0, con ajuste Holm. Las semillas
@@ -103,12 +102,9 @@ datos, modelos, logs ni checkpoints en el repositorio; sólo se publica el
 dashboard resumido. No mezclar resultados de
 esta versión con v2 ni con `imputacion_v3_indicadores`.
 
-## Dashboard de la corrida v3
+## Dashboard de la corrida 
 
 El [dashboard de resultados](docs/dashboard_imputacion_v3.html) contiene el HTML,
-JavaScript y CSS en un solo archivo. Se puede descargar y abrir sin `lib/` ni
-conexión a internet. Proviene de `dashboard_comparativo_descargar (1).zip`
+JavaScript y CSS en un solo archivo. Proviene de `dashboard_comparativo_descargar (1).zip`
 (SHA-256: `14f6e3c696eb10d7bbf891b00aa44bfc41b2f7c767a162e6e2c20388a0cbaaae`).
-El paquete del dashboard no incluye `run_identity.json`; para verificar por hash
-la identidad exacta del código ejecutado en GCP hace falta ese manifiesto de
-la corrida.
+
