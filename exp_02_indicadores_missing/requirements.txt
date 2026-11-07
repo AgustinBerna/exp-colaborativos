@@ -1,0 +1,11 @@
+# Python 3.13; dependencias fijadas para repetir la corrida v3.
+numpy==2.5.4
+polars==2.0.0
+pyarrow==26.0.0
+lightgbm==4.5.0
+miceforest==6.0.5
+pandas==2.3.3
+optuna==4.6.0
+scikit-learn==1.9.1
+scipy==1.18.1
+joblib==1.5.2

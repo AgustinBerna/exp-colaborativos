@@ -1,108 +1,14 @@
-# Exp colaborativos - missings
+# Experimentos colaborativos
 
-Este directorio es el **único código** necesario para reproducir esta versión
-del experimento. 
-Las variables `tmobile_app` y `cmobile_app_trx` se excluyen **para todos los
-métodos** en `02_particionar.py`, antes de imputar y crear lags/deltas. El
-script comprueba que ambas tengan cero valores observados de enero a junio;
-si los datos cambian, falla en vez de excluir información disponible.
+Dos experimentos de imputación de valores faltantes en churn bancario, con código, configuración y resultados de cada corrida.
 
-## Protocolo fijo
+| Experimento | Descripción | Iteraciones E0 | N elegido en agosto | Resultados |
+|---|---|---:|---:|---|
+| [Exp 1 · Imputación](exp_01_imputacion/) | NaN nativo y seis imputaciones | 280 | 4323 | [Dashboard autocontenido](exp_01_imputacion/resultados/dashboard_comparativo.html) · [seleccion.json](exp_01_imputacion/seleccion.json) |
+| [Exp 2 · Indicadores de missing](exp_02_indicadores_missing/) | Los mismos métodos con 150 indicadores de ausencia | 232 | 4000 | [Dashboard autocontenido](exp_02_indicadores_missing/resultados/dashboard_comparativo.html) · [seleccion.json](exp_02_indicadores_missing/seleccion.json) |
 
-| ID | Método |
-|---|---|
-| E0 | NaN nativo de LightGBM |
-| E1 | Media de train |
-| E2 | Mediana de train |
-| E3 | Moda de train |
-| E4 | Forward fill por cliente, sólo desde meses anteriores |
-| E5 | `IterativeImputer` + BayesianRidge; fit en 60.000 filas, máximo 10 rondas, 25 variables vecinas |
-| E6 | `miceforest` + LightGBM; todo train, `data_subset=0`, 5 rondas MICE, 100 iteraciones LightGBM por variable/ronda, 5 donantes PMM |
+Para ver un dashboard, descargar el archivo HTML y abrirlo localmente: todas sus dependencias están embebidas. Cada carpeta incluye también un CSV con la tabla del dashboard y un manifiesto de publicación con hashes. Se publican los resultados suministrados, sin nuevos entrenamientos.
 
+Ambas corridas entrenan con marzo–junio de 2019, validan en agosto y evalúan octubre con 30 semillas por método. **Cada experimento tiene su propia selección E0 y su propio N**; la comparación entre Exp 1 y Exp 2 es descriptiva y no aísla causalmente el efecto de los indicadores. Los detalles y límites de procedencia están en los README de cada experimento.
 
-
-La auditoría transforma un **mes-variable** 100% cero en faltante y guarda el
-detalle en `raw/variables_100pct_ceros.csv`. No agrega indicadores de missing.
-Las dos variables excluidas estaban vacías también en enero y febrero, por lo
-que no podían aportar lags al entrenamiento.
-
-- Entrenamiento sin undersampling: 201903–201906; BAJA+1 y BAJA+2 son positivas.
-- Optuna: 50 trials **sólo en E0**, ordenados por AUC binaria de 201908.
-- E0 elige un N único por ganancia acumulada suavizada en agosto, con ±500 envíos. La curva completa de agosto queda guardada.
-- Test: 201910, con 30 semillas comunes. Todos usan parámetros, iteración y N
-  elegidos por E0; la ganancia remunera sólo BAJA+2.
-- Wilcoxon pareado por semilla frente a E0, con ajuste Holm. Las semillas
-  comparten un mismo mes test; no son 30 tests temporales independientes.
-
-## Archivos
-
-`run_pipeline.py` llama secuencialmente a `01_auditar.py`, `02_particionar.py`,
-los scripts `03_imputar_*.py`, `04_modelar_evaluar.py` y `dashboard.R`.
-`05_estado.py` muestra checkpoints. `src/` contiene las funciones compartidas
-de features y publicación en Cloud Storage. Cada etapa deja logs y marcadores
-`DONE.json`; E6 (`E06` en el código) guarda un checkpoint por ronda MICE y por mes. E5 guarda el
-imputador al terminar el fit, por lo que una interrupción durante ese fit lo
-repite. Los métodos se preparan en el orden E0–E6.
-E5 usa su algoritmo anterior sin acotar predicciones al rango observado.
-
-## Instalar y probar
-
-Requiere Python 3.13.9 y R para generar el dashboard. Desde la raíz de este repositorio:
-
-```bash
-uv python install 3.13.9
-uv venv --python 3.13.9 .venv
-uv pip install --python .venv/bin/python -r requirements.txt
-Rscript install_r_packages.R
-.venv/bin/python -m unittest discover -s tests -v
-```
-
-Las pruebas usan clientes inventados; **no entrenan con el CSV real**.
-
-Para correr localmente, indicar rutas propias para el CSV y la salida. No hace
-falta `--remote`:
-
-```bash
-.venv/bin/python run_pipeline.py \
-  --data /ruta/competencia_02_crudo.csv.gz \
-  --work /ruta/salidas/imputacion_v3 \
-  --step all
-```
-
-## Corrida completa en GCP Spot
-
-Clonar este repositorio en la VM y poner el CSV en una ruta accesible. El
-trabajo activo va a disco local y los checkpoints a un prefijo nuevo del bucket:
-
-```bash
-tmux new -s imputacion_v3
-cd /home/ds/exp-colaborativos
-.venv/bin/python run_pipeline.py \
-  --data /ruta/competencia_02_crudo.csv.gz \
-  --work /home/ds/backup/imputacion_v3 \
-  --remote gs://TU_BUCKET/exp/imputacion_v3 \
-  --step all
-```
-
-Salir de tmux con `Ctrl+B`, `D`. Para retomar tras una Spot, restaurar el mismo
-código y entorno y repetir el comando. `run_identity.json` impide mezclar
-datos, configuración o código diferentes bajo el mismo `--work`/`--remote`.
-Para ejecutar sólo una etapa: `--step auditar`, `particionar`, `preparar`,
-`modelar`, `dashboard` o `estado` (manteniendo los demás argumentos).
-
-El resultado final está en `resultados/dashboard_comparativo_descargar.zip`:
-descomprimir el HTML junto a `lib/` para ver los gráficos. También quedan CSV
-de métricas por semilla, ensambles, curvas y `FINALIZADO.json`.
-
-Los resultados de corridas reales se guardan fuera de este directorio de código,
-en la ruta indicada con `--work` y, si corresponde, en `--remote`. No se incluyen
-datos, modelos, logs ni checkpoints en el repositorio; sólo se publica el
-dashboard resumido. No mezclar resultados de
-esta versión con v2 ni con `imputacion_v3_indicadores`.
-
-## Dashboard de la corrida 
-
-El [dashboard de resultados](docs/dashboard_imputacion_v3.html) contiene el HTML,
-JavaScript y CSS en un solo archivo. Proviene de `dashboard_comparativo_descargar (1).zip`
-(SHA-256: `14f6e3c696eb10d7bbf891b00aa44bfc41b2f7c767a162e6e2c20388a0cbaaae`).
-
+La versión anterior del repositorio se conserva en el historial de Git. Su [dashboard anterior](docs/dashboard_imputacion_v3.html) permanece accesible para conservar ese enlace. Las carpetas actuales organizan las dos corridas solicitadas.

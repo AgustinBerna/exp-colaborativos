@@ -11,5 +11,10 @@ __pycache__/
 *.zip
 work/
 logs/
-resultados/
 lib/
+salidas/
+!exp_01_imputacion/resultados/dashboard_comparativo.html
+!exp_02_indicadores_missing/resultados/dashboard_comparativo.html
+!exp_01_imputacion/resultados/resumen_dashboard.csv
+!exp_02_indicadores_missing/resultados/resumen_dashboard.csv
+!docs/dashboard_imputacion_v3.html

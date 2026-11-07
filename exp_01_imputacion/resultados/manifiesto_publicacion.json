@@ -1,0 +1,147 @@
+{
+  "original_html_sha256": "46356dd3ec69a857ecb95d4f14e92cc3cfe4fb3e3839659257c68750c646a5ba",
+  "published_html_sha256": "43c2db0c1b719dc7ac1ef73ec4d261e81611bce8f1d66cefd6521a1d2d9d9a83",
+  "dependencies_sha256": {
+    "lib/htmlwidgets-1.6.4/htmlwidgets.js": "4578d2a0732228ac3381eb2b3dfd81d30dc1d8000beb96a1b20e4f2088b2b9a4",
+    "lib/plotly-binding-4.12.1/plotly.js": "56288752cfa1613e53ced81ac2769ba23674feebf32cbd171ff5f22a747077e9",
+    "lib/typedarray-0.1/typedarray.min.js": "d95dda2a9a0ac6d74f2a473074b9d613b5a43a83b1dbc8590c247d9da1e22b3b",
+    "lib/jquery-3.6.0/jquery-3.6.0.min.js": "ff1523fb7389539c84c65aba19260648793bb4f5e29329d2ee8804bc37a3fe6e",
+    "lib/crosstalk-1.2.2/js/crosstalk.min.js": "abd7f07e2e8acbe5ba7aa3dc76712efaece662fb65560fbbcb3e8fb1df66b2e9",
+    "lib/plotly-main-2.25.2/plotly-latest.min.js": "419deebe105f4c993feb7e6d1fe94fb1c2f7f98716db5d9b8fe3e37773838898",
+    "lib/datatables-binding-0.34.0/datatables.js": "be05866c167d992b4bb125b4fe6e4f59bd15684e3895a7b71b10bf3b5525f039",
+    "lib/dt-core-1.13.6/js/jquery.dataTables.min.js": "24362c145a81e1e2fd95185c4300d2595afb2cadd9f1580c2ddce95bc19b2084",
+    "lib/htmltools-fill-0.5.9/fill.css": "0f41825dd6d8bb9923f39a10cd5de929daf009243c64e3e30fc008e45b8c3325",
+    "lib/crosstalk-1.2.2/css/crosstalk.min.css": "47bfd8c2b16c29c0c5d03656963e26730f7c566f8f7ea9dd4448bbaaca09ca0d",
+    "lib/plotly-htmlwidgets-css-2.25.2/plotly-htmlwidgets.css": "44356da5c42f304af74d60ee75225f216d5241f353f07fdef30c99536e103d9b",
+    "lib/datatables-css-0.0.0/datatables-crosstalk.css": "307bdda9489717def72ee62ace5d657c53aba18d04e572306b0899b58d5ef0d2",
+    "lib/dt-core-1.13.6/css/jquery.dataTables.min.css": "5e9bf0ca99854ef5cde954de1b15f0410c38d658d8a8f9048003911aa6b36b26",
+    "lib/dt-core-1.13.6/css/jquery.dataTables.extra.css": "d09c0bac7716c2864745996c76abb5342e50f6a87f395b6cf98ccf79aea41714"
+  },
+  "widgets": 8,
+  "methods": [
+    "E0 · NaN nativo",
+    "E06 · miceforest",
+    "E1 · Media",
+    "E2 · Mediana",
+    "E3 · Moda",
+    "E4 · Forward fill",
+    "E5 · Ridge 60k/10/25"
+  ],
+  "all_widget_data_preserved": true,
+  "unresolved_dependencies": [],
+  "transformations": [
+    "JavaScript, CSS y recursos CSS locales embebidos",
+    "Tabla sin paginación: siete métodos visibles; mismas métricas"
+  ],
+  "summary_csv_source": "Tabla embebida en el HTML original; no es una nueva corrida",
+  "source_folder": "imputacion_v3",
+  "experiment": "exp_01_imputacion",
+  "selection_sha256": "7967687d26090cfc738c6b7e8703757ab4a9845c9c274ef1a23d361c6289b351",
+  "selection_matches_requested_file": true,
+  "n_verified_from_test_curves": 4323,
+  "code_files": [
+    {
+      "file": "01_auditar.py",
+      "source_sha256": "b888c0e81d711d2d3afa7daf1955476d1e3e580b629f2678956f0c6210d7443f",
+      "published_sha256": "b888c0e81d711d2d3afa7daf1955476d1e3e580b629f2678956f0c6210d7443f"
+    },
+    {
+      "file": "02_particionar.py",
+      "source_sha256": "3ce650f4b1964e47be8030997113286f3c455c4d276e05207ce378eaa05ae73e",
+      "published_sha256": "3ce650f4b1964e47be8030997113286f3c455c4d276e05207ce378eaa05ae73e"
+    },
+    {
+      "file": "03_imputar_baseline.py",
+      "source_sha256": "48c675662d46f680cb2a34a00d63d536e58d28fce112210d494c0c10843b801a",
+      "published_sha256": "48c675662d46f680cb2a34a00d63d536e58d28fce112210d494c0c10843b801a"
+    },
+    {
+      "file": "03_imputar_miceforest.py",
+      "source_sha256": "ddf9db215c7d2f57bf49dd9addd3a8f60d832f400de2b65583bd26e1052b8180",
+      "published_sha256": "ddf9db215c7d2f57bf49dd9addd3a8f60d832f400de2b65583bd26e1052b8180"
+    },
+    {
+      "file": "03_imputar_multivariada.py",
+      "source_sha256": "bdf4ba560ab3171b57c2f4a6ccafa0684c2ce09254f81bd40da2b975aa89c622",
+      "published_sha256": "bdf4ba560ab3171b57c2f4a6ccafa0684c2ce09254f81bd40da2b975aa89c622"
+    },
+    {
+      "file": "03_imputar_temporal.py",
+      "source_sha256": "3d8675910e368a5eb72780865b415b2d719c4c94bd41cfb7ae53e3402828f897",
+      "published_sha256": "3d8675910e368a5eb72780865b415b2d719c4c94bd41cfb7ae53e3402828f897"
+    },
+    {
+      "file": "03_imputar_univariada.py",
+      "source_sha256": "7520ea4ce240fcd710151554acd4608f402bb95d611bbeb10b69b1b5cda2d2f9",
+      "published_sha256": "7520ea4ce240fcd710151554acd4608f402bb95d611bbeb10b69b1b5cda2d2f9"
+    },
+    {
+      "file": "04_modelar_evaluar.py",
+      "source_sha256": "7ffb4a417a23aefaa26ccf7ea649f62bb6de9dc0e84b3d3a4e66d3f15ca0fb10",
+      "published_sha256": "7ffb4a417a23aefaa26ccf7ea649f62bb6de9dc0e84b3d3a4e66d3f15ca0fb10"
+    },
+    {
+      "file": "05_estado.py",
+      "source_sha256": "5a9b03389b5dad87cdde972f851259c46b72880c9744596bb1b9b9dc93f962fa",
+      "published_sha256": "5a9b03389b5dad87cdde972f851259c46b72880c9744596bb1b9b9dc93f962fa"
+    },
+    {
+      "file": "config.json",
+      "source_sha256": "f4aaef432f9d1b5c462cd39464f23e93e41f383c11eb0e5686cb06ca1e6d9dc0",
+      "published_sha256": "f4aaef432f9d1b5c462cd39464f23e93e41f383c11eb0e5686cb06ca1e6d9dc0"
+    },
+    {
+      "file": "dashboard.R",
+      "source_sha256": "94c3a31b7fe37e654457c6bf98fa0231f40d12f02ce4e819072705c16c0a9744",
+      "published_sha256": "94c3a31b7fe37e654457c6bf98fa0231f40d12f02ce4e819072705c16c0a9744"
+    },
+    {
+      "file": "install_r_packages.R",
+      "source_sha256": "4f788191befccc7086c739c51c3541c8326bb3671edcfe0e54e8c7b419ccc5f7",
+      "published_sha256": "4f788191befccc7086c739c51c3541c8326bb3671edcfe0e54e8c7b419ccc5f7"
+    },
+    {
+      "file": "requirements.txt",
+      "source_sha256": "a8896c93b2e63608f88c595d3d1a095fa19b957a4f37cb0901abc711692d78f9",
+      "published_sha256": "a8896c93b2e63608f88c595d3d1a095fa19b957a4f37cb0901abc711692d78f9"
+    },
+    {
+      "file": "run_pipeline.py",
+      "source_sha256": "37c5f4da0bce9ec2bd5cd7141361621d11d46d72b0ea6f145ecfeaf2ec84394a",
+      "published_sha256": "37c5f4da0bce9ec2bd5cd7141361621d11d46d72b0ea6f145ecfeaf2ec84394a"
+    },
+    {
+      "file": "src/fe_imputacion.py",
+      "source_sha256": "127b99dd1be10541e6d24307116f61b304a0cb4c2b974c62d7172f7e05938996",
+      "published_sha256": "127b99dd1be10541e6d24307116f61b304a0cb4c2b974c62d7172f7e05938996"
+    },
+    {
+      "file": "src/remote.py",
+      "source_sha256": "0688909dd9b7f9492cebd2654a744f5d64e6629870beab994fc3cd9982828426",
+      "published_sha256": "0688909dd9b7f9492cebd2654a744f5d64e6629870beab994fc3cd9982828426"
+    },
+    {
+      "file": "tests/test_dashboard.py",
+      "source_sha256": "a2b8bcffb1201fc4525728ae8ab29d4143224dd3fa72ebbb41306da8d083f26c",
+      "published_sha256": "a2b8bcffb1201fc4525728ae8ab29d4143224dd3fa72ebbb41306da8d083f26c"
+    },
+    {
+      "file": "tests/test_exclusion.py",
+      "source_sha256": "d2073b60e82529f3b5eec3ed8602c5e925ec2a7b8bfa767983dc7ee67c80916a",
+      "published_sha256": "d2073b60e82529f3b5eec3ed8602c5e925ec2a7b8bfa767983dc7ee67c80916a"
+    },
+    {
+      "file": "tests/test_imputadores.py",
+      "source_sha256": "9d91eba03adf96139b981d4d6fb309efecdbee434707a4e64e2e8b70df9b9940",
+      "published_sha256": "9d91eba03adf96139b981d4d6fb309efecdbee434707a4e64e2e8b70df9b9940"
+    },
+    {
+      "file": "tests/test_model_flow.py",
+      "source_sha256": "b4ddbc43751ce090e1201a282425dab194227b4863f523b6b3c4a76ec14b7ca3",
+      "published_sha256": "b4ddbc43751ce090e1201a282425dab194227b4863f523b6b3c4a76ec14b7ca3"
+    }
+  ],
+  "new_training_executed": false,
+  "run_identity_verified": false,
+  "provenance_limit": "Código y artefactos suministrados localmente. Sin manifiesto de la ejecución original que certifique por hash el código ejecutado."
+}

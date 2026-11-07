@@ -1,0 +1,17 @@
+{
+  "source_method": "E0",
+  "best_auc_valid": 0.9376034219638002,
+  "best_iteration": 280,
+  "n_selected_valid": 4323,
+  "gain_valid_at_n": 212217500.0,
+  "gain_valid_smoothed_at_n": 212257060.43956044,
+  "smoothing_radius_n": 500,
+  "n_raw_max_valid": 4645,
+  "best_params": {
+    "num_leaves": 86,
+    "learning_rate": 0.020524787613166923,
+    "min_data_in_leaf": 1459,
+    "feature_fraction": 0.41230764615277504,
+    "bagging_fraction": 0.943002139120749
+  }
+}

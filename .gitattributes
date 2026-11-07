@@ -1,0 +1,6 @@
+* -text whitespace=cr-at-eol
+**/resultados/dashboard_comparativo.html -whitespace linguist-generated
+**/resultados/manifiesto_publicacion.json linguist-generated
+**/resultados/resumen_dashboard.csv linguist-generated
+exp_02_indicadores_missing/src/remote.py -whitespace
+exp_02_indicadores_missing/config.json -whitespace
