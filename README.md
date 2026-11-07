@@ -11,4 +11,3 @@ Para ver un dashboard, descargar el archivo HTML y abrirlo localmente: todas sus
 
 Ambas corridas entrenan con marzo–junio de 2019, validan en agosto y evalúan octubre con 30 semillas por método. **Cada experimento tiene su propia selección E0 y su propio N**; la comparación entre Exp 1 y Exp 2 es descriptiva y no aísla causalmente el efecto de los indicadores. Los detalles y límites de procedencia están en los README de cada experimento.
 
-La versión anterior del repositorio se conserva en el historial de Git. Su [dashboard anterior](docs/dashboard_imputacion_v3.html) permanece accesible para conservar ese enlace. Las carpetas actuales organizan las dos corridas solicitadas.
